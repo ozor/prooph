@@ -4,11 +4,24 @@ declare(strict_types=1);
 
 namespace App\Basket\Model;
 
+use App\Basket\Model\Event\ShoppingSessionStarted;
+use App\Basket\Model\Basket\BasketId;
+use App\Basket\Model\Basket\ShoppingSession;
 use Prooph\EventSourcing\AggregateChanged;
 use Prooph\EventSourcing\AggregateRoot;
 
 final class Basket extends AggregateRoot
 {
+    /**
+     * @var BasketId
+     */
+    private $basketId;
+
+    /**
+     * @var ShoppingSession
+     */
+    private $shoppingSession;
+
     public static function startShoppingSession(
         ShoppingSession $shoppingSession,
         BasketId $basketId)
@@ -30,7 +43,8 @@ final class Basket extends AggregateRoot
 
     protected function aggregateId(): string
     {
-        // TODO: Implement aggregateId() method.
+        // Return string representation of the globally unique identifier of the aggregate
+        return $this->basketId->toString();
     }
 
     /**
@@ -38,6 +52,16 @@ final class Basket extends AggregateRoot
      */
     protected function apply(AggregateChanged $event): void
     {
-        // TODO: Implement apply() method.
+        // A simple switch by event name is the fastest way,
+        // but you're free to split things up here and have, for example, methods like
+        // private function whenShoppingSessionStarted()
+        // To delegate work to them and keep the apply method lean
+        switch ($event->messageName()) {
+            case ShoppingSessionStarted::class:
+                /** @var $event ShoppingSessionStarted */
+                $this->basketId = $event->basketId();
+                $this->shoppingSession = $event->shoppingSession();
+                break;
+        }
     }
 }
